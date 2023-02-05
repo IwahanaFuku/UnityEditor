@@ -72,7 +72,17 @@ public class Renamer : EditorWindow
     {
         Undo.RecordObjects(Selection.gameObjects, "Add Object Number");
         GameObject[] selectedObjects = Selection.gameObjects;
-        System.Array.Sort(selectedObjects, (x, y) => x.transform.GetSiblingIndex().CompareTo(y.transform.GetSiblingIndex()));
+
+        System.Array.Sort(selectedObjects, (x, y) => 
+        {
+            int depthDifference = GetDepth(x.transform) - GetDepth(y.transform);
+            if (depthDifference != 0)
+            {
+                return depthDifference;
+            }
+            return x.transform.GetSiblingIndex().CompareTo(y.transform.GetSiblingIndex());
+        });
+
         Selection.objects = selectedObjects;
         Dictionary<string, int> names = new Dictionary<string, int>();
         for (int i = 0; i < selectedObjects.Length; i++)
@@ -92,15 +102,26 @@ public class Renamer : EditorWindow
         }
     }
 
+    private int GetDepth(Transform transform)
+    {
+        int depth = 0;
+        while (transform.parent != null)
+        {
+            depth++;
+            transform = transform.parent;
+        }
+        return depth;
+    }
+
     private void RemoveObjectNumber()
     {
         Undo.RecordObjects(Selection.gameObjects, "Remove Object Number");
-        Transform[] transforms = Selection.GetTransforms(SelectionMode.Deep | SelectionMode.Editable);
-        foreach (Transform transform in transforms)
+        GameObject[] gameObjects = Selection.gameObjects;
+        foreach (GameObject gameObject in gameObjects)
         {
-            string name = transform.name;
+            string name = gameObject.name;
             string newName = Regex.Replace(name, @"\s*\(\d+\)$", "");
-            transform.name = newName;
+            gameObject.name = newName;
         }
     }
 }
