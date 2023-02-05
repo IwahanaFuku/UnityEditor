@@ -22,44 +22,51 @@ public class AlignObjectsEditorWindow : EditorWindow
 
     private AlignType alignType = AlignType.Center;
     private Axis arrangerAxis = Axis.X;
+    private bool parentCenterAlignerAccordion = true;
     private bool arrangerAccordion = false;
     private bool distributeAccordion = false;
 
-
-
-
-    [MenuItem("Window/Align Objects")]
+    [MenuItem("Iwahana/Align Objects")]
     public static void ShowWindow()
     {
-        GetWindow<AlignObjectsEditorWindow>("Align Objects");
+        GetWindow<AlignObjectsEditorWindow>("Align Object");
     }
 
     private void OnGUI()
-    {        
-        arrangerAccordion = EditorGUILayout.Foldout(arrangerAccordion, "Arranger");
+    {    
+        parentCenterAlignerAccordion = EditorGUILayout.Foldout(parentCenterAlignerAccordion, "親を生成");
+        if (parentCenterAlignerAccordion)
+        {
+            if (GUILayout.Button("生成"))
+            {
+                ParentCenterAligner();
+            }
+        }
+
+        arrangerAccordion = EditorGUILayout.Foldout(arrangerAccordion, "整列");
         if (arrangerAccordion)
         {
-            GUILayout.Label("Align Type", EditorStyles.boldLabel);
+            GUILayout.Label("基準値", EditorStyles.boldLabel);
             alignType = (AlignType)GUILayout.SelectionGrid((int)alignType, 
-                new string[] { "Maximum", "Center", "Minimum" }, 3);
+                new string[] { "最大", "中央", "最小" }, 3);
 
-            GUILayout.Label("Align", EditorStyles.boldLabel);
+            GUILayout.Label("軸", EditorStyles.boldLabel);
             arrangerAxis = (Axis)GUILayout.SelectionGrid((int)arrangerAxis, 
-                new string[] { "X", "Y", "Z" }, 3);
+                new string[] { "X軸", "Y軸", "Z軸" }, 3);
 
-            if (GUILayout.Button("Arranger"))
+            if (GUILayout.Button("整列"))
             {
                 AlignSelectedObjects();
             }
         }
         
-        distributeAccordion = EditorGUILayout.Foldout(distributeAccordion, "Distribute");
+        distributeAccordion = EditorGUILayout.Foldout(distributeAccordion, "分布");
         if (distributeAccordion)
         {
-            GUILayout.Label("Align", EditorStyles.boldLabel);
-            axisSelection = GUILayout.SelectionGrid(axisSelection, new string[] { "X", "Y", "Z" }, 3);
+            GUILayout.Label("軸", EditorStyles.boldLabel);
+            axisSelection = GUILayout.SelectionGrid(axisSelection, new string[] { "X軸", "Y軸", "Z軸" }, 3);
 
-            if (GUILayout.Button("Distribute"))
+            if (GUILayout.Button("分布"))
             {
                 Distribute();
             }
@@ -165,6 +172,30 @@ public class AlignObjectsEditorWindow : EditorWindow
             Selection.gameObjects[i].transform.position = newPos;
         }
         Undo.FlushUndoRecordObjects();
+    }
+
+    private void ParentCenterAligner()
+    {
+        if(checkSelectedTransform(Selection.transforms)){return;}
+
+        Undo.RecordObjects(Selection.transforms, "Align Objects");
+        Transform[] selectedTransforms = Selection.transforms;
+
+        Vector3 center = Vector3.zero;
+        foreach (Transform transform in selectedTransforms)
+        {
+            center += transform.position;
+        }
+        center /= selectedTransforms.Length;
+
+        GameObject parent = new GameObject("Parent");
+        Undo.RegisterCreatedObjectUndo(parent, "Create Parent");
+        parent.transform.position = center;
+
+        foreach (Transform transform in selectedTransforms)
+        {
+            Undo.SetTransformParent(transform, parent.transform, "Set Parent");
+        }
     }
 
     private bool checkSelectedTransform(Transform[] selectedTransforms)

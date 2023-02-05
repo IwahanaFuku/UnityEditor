@@ -1,63 +1,51 @@
 ﻿using UnityEngine;
 using UnityEditor;
 
-public class DistributeObjects : EditorWindow
+public class CenterAligner : EditorWindow
 {
-    private int axisSelection = 0;
-
-    [MenuItem("Window/Distribute Objects")]
-    public static void ShowWindow()
+    [MenuItem("Tools/Center Aligner")]
+    static void Init()
     {
-        GetWindow<DistributeObjects>();
+        CenterAligner window = (CenterAligner)EditorWindow.GetWindow(typeof(CenterAligner));
+        window.Show();
     }
 
-    private void OnGUI()
+    void OnGUI()
     {
-        GUILayout.Label("Distribute", EditorStyles.boldLabel);
-        axisSelection = GUILayout.SelectionGrid(axisSelection, new string[] { "X Axis", "Y Axis", "Z Axis" }, 3);
-
-        if (GUILayout.Button("Distribute"))
+        if (GUILayout.Button("Align"))
         {
-            Distribute();
+            Undo.RecordObjects(Selection.transforms, "Align Objects");
+
+            Transform[] selectedTransforms = Selection.transforms;
+            if (checkSelectedTransform(selectedTransforms))
+            {
+                Vector3 center = Vector3.zero;
+                foreach (Transform transform in selectedTransforms)
+                {
+                    center += transform.position;
+                }
+                center /= selectedTransforms.Length;
+
+                GameObject parent = new GameObject("Parent");
+                Undo.RegisterCreatedObjectUndo(parent, "Create Parent");
+                parent.transform.position = center;
+
+                foreach (Transform transform in selectedTransforms)
+                {
+                    Undo.SetTransformParent(transform, parent.transform, "Set Parent");
+                }
+            }
         }
     }
 
-    private void Distribute()
+    private bool checkSelectedTransform(Transform[] selectedTransforms)
     {
-        if (Selection.gameObjects.Length < 2)
+        if (selectedTransforms.Length < 2)
         {
-            Debug.LogWarning("Please select at least 2 objects.");
-            return;
+            Debug.LogError("Please select at least two objects to align.");
+            return false;
         }
 
-        Vector3[] positions = new Vector3[Selection.gameObjects.Length];
-        for (int i = 0; i < Selection.gameObjects.Length; i++)
-        {
-            positions[i] = Selection.gameObjects[i].transform.position;
-        }
-
-        switch (axisSelection)
-        {
-            case 0:
-                // sort by x axis
-                System.Array.Sort(positions, (a, b) => a.x.CompareTo(b.x));
-                break;
-            case 1:
-                // sort by y axis
-                System.Array.Sort(positions, (a, b) => a.y.CompareTo(b.y));
-                break;
-            case 2:
-                // sort by z axis
-                System.Array.Sort(positions, (a, b) => a.z.CompareTo(b.z));
-                break;
-        }
-
-        float interval = (positions[positions.Length - 1][axisSelection] - positions[0][axisSelection]) / (positions.Length - 1);
-        for (int i = 0; i < positions.Length; i++)
-        {
-            Vector3 newPos = positions[i];
-            newPos[axisSelection] = positions[0][axisSelection] + i * interval;
-            Selection.gameObjects[i].transform.position = newPos;
-        }
+        return true;
     }
 }
