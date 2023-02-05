@@ -1,51 +1,47 @@
 ﻿using UnityEngine;
 using UnityEditor;
 
-public class CenterAligner : EditorWindow
+public class Renamer : EditorWindow
 {
-    [MenuItem("Tools/Center Aligner")]
-    static void Init()
+    private bool renameToMaterialNameAccordion = true;
+
+    [MenuItem("Iwahana Tools/リネーマー")]
+    public static void ShowWindow()
     {
-        CenterAligner window = (CenterAligner)EditorWindow.GetWindow(typeof(CenterAligner));
-        window.Show();
+        GetWindow<Renamer>("Renamer");
     }
 
     void OnGUI()
     {
-        if (GUILayout.Button("Align"))
+        renameToMaterialNameAccordion = EditorGUILayout.Foldout(renameToMaterialNameAccordion, "マテリアルの名前でリネーム");
+        if (renameToMaterialNameAccordion)
         {
-            Undo.RecordObjects(Selection.transforms, "Align Objects");
-
-            Transform[] selectedTransforms = Selection.transforms;
-            if (checkSelectedTransform(selectedTransforms))
+            if (GUILayout.Button("実行"))
             {
-                Vector3 center = Vector3.zero;
-                foreach (Transform transform in selectedTransforms)
-                {
-                    center += transform.position;
-                }
-                center /= selectedTransforms.Length;
-
-                GameObject parent = new GameObject("Parent");
-                Undo.RegisterCreatedObjectUndo(parent, "Create Parent");
-                parent.transform.position = center;
-
-                foreach (Transform transform in selectedTransforms)
-                {
-                    Undo.SetTransformParent(transform, parent.transform, "Set Parent");
-                }
+                renameToMaterialName();
             }
         }
     }
 
-    private bool checkSelectedTransform(Transform[] selectedTransforms)
+    private void renameToMaterialName()
     {
-        if (selectedTransforms.Length < 2)
+        Undo.RecordObjects(Selection.gameObjects, "Change Material Name");
+        GameObject[] selectedObjects = Selection.gameObjects;
+        foreach (GameObject obj in selectedObjects)
         {
-            Debug.LogError("Please select at least two objects to align.");
-            return false;
-        }
+            Renderer renderer = obj.GetComponent<Renderer>();
+            if (renderer == null)
+            {
+                continue;
+            }
 
-        return true;
+            Material mat = renderer.sharedMaterial;
+            if (mat == null)
+            {
+                continue;
+            }
+
+            obj.name = mat.name;
+        }
     }
 }
