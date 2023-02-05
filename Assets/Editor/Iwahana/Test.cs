@@ -1,18 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using UnityEditor;
 using UnityEngine;
 
-public class Test : MonoBehaviour
+public class RemoveNumberFromSelectedObjects : ScriptableObject
 {
-    // Start is called before the first frame update
-    void Start()
+    [MenuItem("Tools/Remove Number from Selected Objects")]
+    static void RemoveNumber()
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        foreach (Transform transform in Selection.transforms)
+        {
+            string[] newNames = transform.name.Split(' ');
+            transform.name = string.Join(" ", newNames, 0, newNames.Length - 1);
+        }
     }
 }

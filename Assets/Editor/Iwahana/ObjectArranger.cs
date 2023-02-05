@@ -26,10 +26,10 @@ public class AlignObjectsEditorWindow : EditorWindow
     private bool arrangerAccordion = false;
     private bool distributeAccordion = false;
 
-    [MenuItem("Iwahana Tools/インスタンス整理ツール", false, 100)]
+    [MenuItem("Iwahana Tools/オブジェクト整理ツール", false, 100)]
     public static void ShowWindow()
     {
-        GetWindow<AlignObjectsEditorWindow>("インスタンス整理ツール");
+        GetWindow<AlignObjectsEditorWindow>("オブジェクト整理ツール");
     }
 
     private void OnGUI()
@@ -161,8 +161,7 @@ public class AlignObjectsEditorWindow : EditorWindow
                 break;
         }
 
-        Transform[] selectedTransforms = Selection.transforms;
-        Undo.RecordObjects(selectedTransforms, "Align Objects");
+        Undo.RecordObjects(Selection.transforms, "Align Objects");
 
         float interval = (positions[positions.Length - 1][axisSelection] - positions[0][axisSelection]) / (positions.Length - 1);
         for (int i = 0; i < positions.Length; i++)
