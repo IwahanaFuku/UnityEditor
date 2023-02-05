@@ -26,10 +26,10 @@ public class AlignObjectsEditorWindow : EditorWindow
     private bool arrangerAccordion = false;
     private bool distributeAccordion = false;
 
-    [MenuItem("Iwahana Tools/オブジェクト整理")]
+    [MenuItem("Iwahana Tools/インスタンス整理ツール", false, 100)]
     public static void ShowWindow()
     {
-        GetWindow<AlignObjectsEditorWindow>("Align Object");
+        GetWindow<AlignObjectsEditorWindow>("インスタンス整理ツール");
     }
 
     private void OnGUI()

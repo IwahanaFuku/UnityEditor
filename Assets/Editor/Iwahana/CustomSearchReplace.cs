@@ -10,7 +10,7 @@ namespace CustomSearchReplace
 {
     public class CustomSearchReplace : EditorWindow
 	{
-		[MenuItem ("Window/Custom Search Replace", false, 100)]
+		[MenuItem ("Iwahana Tools/カスタムサーチリプレイス", false, 200)]
 		static void CreateWindow ()
 		{
             var window = GetWindow<CustomSearchReplace> ("CustomSearch");
