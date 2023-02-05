@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System.Linq;
 
@@ -18,8 +18,15 @@ public class AlignObjectsEditorWindow : EditorWindow
         Z
     }
 
+    private int axisSelection = 0;
+
     private AlignType alignType = AlignType.Center;
-    private Axis axis = Axis.X;
+    private Axis arrangerAxis = Axis.X;
+    private bool arrangerAccordion = false;
+    private bool distributeAccordion = false;
+
+
+
 
     [MenuItem("Window/Align Objects")]
     public static void ShowWindow()
@@ -28,18 +35,34 @@ public class AlignObjectsEditorWindow : EditorWindow
     }
 
     private void OnGUI()
-    {
-        GUILayout.Label("Align Type", EditorStyles.boldLabel);
-        alignType = (AlignType)GUILayout.SelectionGrid((int)alignType, 
-            new string[] { "Maximum", "Center", "Minimum" }, 3);
-
-        GUILayout.Label("Axis", EditorStyles.boldLabel);
-        axis = (Axis)GUILayout.SelectionGrid((int)axis, 
-            new string[] { "X", "Y", "Z" }, 3);
-
-        if (GUILayout.Button("Align"))
+    {        
+        arrangerAccordion = EditorGUILayout.Foldout(arrangerAccordion, "Arranger");
+        if (arrangerAccordion)
         {
-            AlignSelectedObjects();
+            GUILayout.Label("Align Type", EditorStyles.boldLabel);
+            alignType = (AlignType)GUILayout.SelectionGrid((int)alignType, 
+                new string[] { "Maximum", "Center", "Minimum" }, 3);
+
+            GUILayout.Label("Align", EditorStyles.boldLabel);
+            arrangerAxis = (Axis)GUILayout.SelectionGrid((int)arrangerAxis, 
+                new string[] { "X", "Y", "Z" }, 3);
+
+            if (GUILayout.Button("Arranger"))
+            {
+                AlignSelectedObjects();
+            }
+        }
+        
+        distributeAccordion = EditorGUILayout.Foldout(distributeAccordion, "Distribute");
+        if (distributeAccordion)
+        {
+            GUILayout.Label("Align", EditorStyles.boldLabel);
+            axisSelection = GUILayout.SelectionGrid(axisSelection, new string[] { "X", "Y", "Z" }, 3);
+
+            if (GUILayout.Button("Distribute"))
+            {
+                Distribute();
+            }
         }
     }
 
@@ -47,17 +70,13 @@ public class AlignObjectsEditorWindow : EditorWindow
     {
         Transform[] selectedTransforms = Selection.transforms;
 
-        if (selectedTransforms.Length < 2)
-        {
-            Debug.LogError("Please select at least two objects to align.");
-            return;
-        }
+        if(checkSelectedTransform(selectedTransforms)){return;}
 
         float[] values = new float[selectedTransforms.Length];
 
         for (int i = 0; i < selectedTransforms.Length; i++)
         {
-            switch (axis)
+            switch (arrangerAxis)
             {
                 case Axis.X:
                     values[i] = selectedTransforms[i].position.x;
@@ -92,7 +111,7 @@ public class AlignObjectsEditorWindow : EditorWindow
         {
             Vector3 pos = t.position;
 
-            switch (axis)
+            switch (arrangerAxis)
             {
                 case Axis.X:
                     pos.x = targetValue;
@@ -110,4 +129,51 @@ public class AlignObjectsEditorWindow : EditorWindow
 
         Undo.FlushUndoRecordObjects();
     }
+    
+    private void Distribute()
+    {
+        if(checkSelectedTransform(Selection.transforms)){return;}
+        
+        Vector3[] positions = new Vector3[Selection.gameObjects.Length];
+
+        for (int i = 0; i < Selection.gameObjects.Length; i++)
+        {
+            positions[i] = Selection.gameObjects[i].transform.position;
+        }
+
+        switch (axisSelection)
+        {
+            case 0:
+                System.Array.Sort(positions, (a, b) => a.x.CompareTo(b.x));
+                break;
+            case 1:
+                System.Array.Sort(positions, (a, b) => a.y.CompareTo(b.y));
+                break;
+            case 2:
+                System.Array.Sort(positions, (a, b) => a.z.CompareTo(b.z));
+                break;
+        }
+
+        Transform[] selectedTransforms = Selection.transforms;
+        Undo.RecordObjects(selectedTransforms, "Align Objects");
+
+        float interval = (positions[positions.Length - 1][axisSelection] - positions[0][axisSelection]) / (positions.Length - 1);
+        for (int i = 0; i < positions.Length; i++)
+        {
+            Vector3 newPos = positions[i];
+            newPos[axisSelection] = positions[0][axisSelection] + i * interval;
+            Selection.gameObjects[i].transform.position = newPos;
+        }
+        Undo.FlushUndoRecordObjects();
+    }
+
+    private bool checkSelectedTransform(Transform[] selectedTransforms)
+    {
+    if (selectedTransforms.Length < 2)
+        {
+            Debug.LogError("Please select at least two objects to align.");
+            return true;
+        }
+        return false;
+    } 
 }
