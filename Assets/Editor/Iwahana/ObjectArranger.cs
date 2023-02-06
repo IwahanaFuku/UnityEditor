@@ -27,7 +27,7 @@ public class AlignObjectsEditorWindow : EditorWindow
 
     private AlignType alignType = AlignType.Center;
     private Axis arrangerAxis = Axis.X;
-    private bool parentCenterAlignerAccordion = true;
+    private bool parentCenterAlignerAccordion = false;
     private bool arrangerAccordion = false;
     private bool distributeAccordion = false;
     private bool randomRotationAccordion = false;
@@ -74,7 +74,7 @@ public class AlignObjectsEditorWindow : EditorWindow
 
             if (GUILayout.Button("分布"))
             {
-                Distribute();
+                DistributeObjects();
             }
         }
         
@@ -88,9 +88,18 @@ public class AlignObjectsEditorWindow : EditorWindow
 
             if (GUILayout.Button("回転"))
         {
-            RotateSelectedObject();
+            RandomRotateSelectedObjects();
         }
         }
+    }
+
+    //================================================================================
+    /// <summary>
+    /// 選択オブジェクトのTransformを四捨五入する
+    /// </summary>
+    [MenuItem ("Iwahana Tools/カスタム ショートカット/グループを生成 %g")]
+    private static void Log2 () {
+        ParentCenterAligner();
     }
 
     private void AlignSelectedObjects()
@@ -157,7 +166,7 @@ public class AlignObjectsEditorWindow : EditorWindow
         Undo.FlushUndoRecordObjects();
     }
     
-    private void Distribute()
+    private void DistributeObjects()
     {
         if(checkSelectedTransform(Selection.transforms)){return;}
         
@@ -193,11 +202,11 @@ public class AlignObjectsEditorWindow : EditorWindow
         Undo.FlushUndoRecordObjects();
     }
 
-    private void ParentCenterAligner()
+    private static void ParentCenterAligner()
     {
         if(checkSelectedTransform(Selection.transforms)){return;}
 
-        Undo.RecordObjects(Selection.transforms, "Align Objects");
+        Undo.RecordObjects(Selection.transforms, "Align Group Objects");
         Transform[] selectedTransforms = Selection.transforms;
 
         Vector3 center = Vector3.zero;
@@ -207,47 +216,52 @@ public class AlignObjectsEditorWindow : EditorWindow
         }
         center /= selectedTransforms.Length;
 
-        GameObject parent = new GameObject("Parent");
-        Undo.RegisterCreatedObjectUndo(parent, "Create Parent");
-        parent.transform.position = center;
+        GameObject group = new GameObject("Group");
+        Undo.RegisterCreatedObjectUndo(group, "Create Group");
+        group.transform.position = center;
 
         foreach (Transform transform in selectedTransforms)
         {
-            Undo.SetTransformParent(transform, parent.transform, "Set Parent");
+            Undo.SetTransformParent(transform, group.transform, "Set Group");
         }
+
+        Selection.activeGameObject = group;
     }
 
-    private void RotateSelectedObject()
+    private void RandomRotateSelectedObjects()
     {
         Undo.RecordObjects(Selection.transforms, "Random Rotate Objects");
-        GameObject selectedObject = Selection.activeGameObject;
-        if (selectedObject != null)
+
+        foreach (GameObject selectedObject in Selection.gameObjects)
         {
-            float xRotation = 0f;
-            float yRotation = 0f;
-            float zRotation = 0f;
-
-            if (rotateX)
+            if (selectedObject != null)
             {
-                xRotation = Mathf.Floor(Random.Range(0, 360) / rotationAmount) * rotationAmount;
-            }
+                float xRotation = 0f;
+                float yRotation = 0f;
+                float zRotation = 0f;
 
-            if (rotateY)
-            {
-                yRotation = Mathf.Floor(Random.Range(0, 360) / rotationAmount) * rotationAmount;
-                Debug.Log("Result: " + yRotation);
-            }
+                if (rotateX)
+                {
+                    xRotation = Mathf.Floor(Random.Range(0, 360) / rotationAmount) * rotationAmount;
+                }
 
-            if (rotateZ)
-            {
-                zRotation = Mathf.Floor(Random.Range(0, 360) / rotationAmount) * rotationAmount;
-            }
+                if (rotateY)
+                {
+                    yRotation = Mathf.Floor(Random.Range(0, 360) / rotationAmount) * rotationAmount;
+                }
 
-            selectedObject.transform.rotation = Quaternion.Euler(xRotation, yRotation, zRotation);
+                if (rotateZ)
+                {
+                    zRotation = Mathf.Floor(Random.Range(0, 360) / rotationAmount) * rotationAmount;
+                }
+
+                selectedObject.transform.rotation = Quaternion.Euler(xRotation, yRotation, zRotation);
+            }
         }
     }
 
-    private bool checkSelectedTransform(Transform[] selectedTransforms)
+
+    private static bool checkSelectedTransform(Transform[] selectedTransforms)
     {
     if (selectedTransforms.Length < 2)
         {
