@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 
-public class AlignObjectsEditorWindow : EditorWindow
+public class PlacemenAssistanceEditorWindow : EditorWindow
 {
     private enum AlignType
     {
@@ -25,17 +25,25 @@ public class AlignObjectsEditorWindow : EditorWindow
     private bool rotateY = true;
     private bool rotateZ = false;
 
+    private static float minimum = 0.5f;
+    private static float maximum = 1.5f;
+    private float scaleRatio = 1f;
+    private bool isDetail = false;
+    Vector3 minScale = new Vector3(minimum, minimum, minimum);
+    Vector3 maxScale = new Vector3(maximum, maximum, maximum);
+
     private AlignType alignType = AlignType.Center;
     private Axis arrangerAxis = Axis.X;
     private bool parentCenterAlignerAccordion = false;
     private bool arrangerAccordion = false;
     private bool distributeAccordion = false;
     private bool randomRotationAccordion = false;
+    private bool randomScalenAccordion = false;
 
     [MenuItem("Iwahana Tools/配置支援ツール", false, 100)]
     public static void ShowWindow()
     {
-        GetWindow<AlignObjectsEditorWindow>("配置支援ツール");
+        GetWindow<PlacemenAssistanceEditorWindow>("配置支援ツール");
     }
 
     private void OnGUI()
@@ -78,6 +86,39 @@ public class AlignObjectsEditorWindow : EditorWindow
             }
         }
         
+        randomScalenAccordion = EditorGUILayout.Foldout(randomScalenAccordion, "ランダムスケール");
+        if (randomScalenAccordion)
+        {
+            scaleRatio = EditorGUILayout.FloatField("オフセット", scaleRatio);
+
+            using (new EditorGUI.DisabledGroupScope(isDetail))
+            {
+                minimum = EditorGUILayout.FloatField("最小", minimum);
+                maximum = EditorGUILayout.FloatField("最大", maximum);
+            }
+
+            isDetail = EditorGUILayout.Toggle("詳細", isDetail);
+
+            if(isDetail == false)
+            {
+                if (GUILayout.Button("スケール"))
+                {
+                    Undo.RecordObjects(Selection.transforms, "Random Scale Objects");
+                    RandomScaleSelectedObjects();
+                }
+            }
+            else
+            {            
+                minScale = EditorGUILayout.Vector3Field("最小", minScale);
+                maxScale = EditorGUILayout.Vector3Field("最大", maxScale);
+                if (GUILayout.Button("スケール"))
+                {
+                    Undo.RecordObjects(Selection.transforms, "Random Detail Scale Objects");                   
+                    RandomDetailScaleSelectedObjects();
+                }
+            }
+        }
+
         randomRotationAccordion = EditorGUILayout.Foldout(randomRotationAccordion, "ランダム回転");
         if (randomRotationAccordion)
         {
@@ -87,9 +128,9 @@ public class AlignObjectsEditorWindow : EditorWindow
             rotateZ = EditorGUILayout.Toggle("Z軸", rotateZ);
 
             if (GUILayout.Button("回転"))
-        {
-            RandomRotateSelectedObjects();
-        }
+            {
+                RandomRotateSelectedObjects();
+            }
         }
     }
 
@@ -169,24 +210,26 @@ public class AlignObjectsEditorWindow : EditorWindow
     private void DistributeObjects()
     {
         if(checkSelectedTransform(Selection.transforms)){return;}
-        
+
+        int[] originalIndices = new int[Selection.gameObjects.Length];
         Vector3[] positions = new Vector3[Selection.gameObjects.Length];
 
         for (int i = 0; i < Selection.gameObjects.Length; i++)
         {
+            originalIndices[i] = i;
             positions[i] = Selection.gameObjects[i].transform.position;
         }
 
         switch (axisSelection)
         {
             case 0:
-                System.Array.Sort(positions, (a, b) => a.x.CompareTo(b.x));
+                System.Array.Sort(originalIndices, (a, b) => positions[a].x.CompareTo(positions[b].x));
                 break;
             case 1:
-                System.Array.Sort(positions, (a, b) => a.y.CompareTo(b.y));
+                System.Array.Sort(originalIndices, (a, b) => positions[a].y.CompareTo(positions[b].y));
                 break;
             case 2:
-                System.Array.Sort(positions, (a, b) => a.z.CompareTo(b.z));
+                System.Array.Sort(originalIndices, (a, b) => positions[a].z.CompareTo(positions[b].z));
                 break;
         }
 
@@ -195,12 +238,13 @@ public class AlignObjectsEditorWindow : EditorWindow
         float interval = (positions[positions.Length - 1][axisSelection] - positions[0][axisSelection]) / (positions.Length - 1);
         for (int i = 0; i < positions.Length; i++)
         {
-            Vector3 newPos = positions[i];
+            Vector3 newPos = positions[originalIndices[i]];
             newPos[axisSelection] = positions[0][axisSelection] + i * interval;
-            Selection.gameObjects[i].transform.position = newPos;
+            Selection.gameObjects[originalIndices[i]].transform.position = newPos;
         }
         Undo.FlushUndoRecordObjects();
     }
+
 
     private static void ParentCenterAligner()
     {
@@ -226,6 +270,37 @@ public class AlignObjectsEditorWindow : EditorWindow
         }
 
         Selection.activeGameObject = group;
+    }
+
+    private void RandomScaleSelectedObjects()
+    {
+        Undo.RecordObjects(Selection.objects, "Randomize Scale");
+        foreach (var selectedObject in Selection.objects)
+        {
+            var transform = (selectedObject as GameObject).transform;
+            var newscale = 1f;
+
+            if(isDetail == false)
+            {
+                newscale = newscale * Random.Range(minimum, maximum);
+            }
+
+            var scale = scaleRatio * newscale;
+            transform.localScale = new Vector3(scale, scale, scale);
+        }
+    }
+
+    private void RandomDetailScaleSelectedObjects()
+    {
+        foreach (Transform transform in Selection.transforms)
+        {
+            Vector3 scale = transform.localScale;
+            scale.x = scaleRatio * Random.Range(Mathf.Min(minScale.x, maxScale.x), Mathf.Max(minScale.x, maxScale.x));
+            scale.y = scaleRatio * Random.Range(Mathf.Min(minScale.y, maxScale.y), Mathf.Max(minScale.y, maxScale.y));
+            scale.z = scaleRatio * Random.Range(Mathf.Min(minScale.z, maxScale.z), Mathf.Max(minScale.z, maxScale.z));
+
+            transform.localScale = scale;
+        }
     }
 
     private void RandomRotateSelectedObjects()
