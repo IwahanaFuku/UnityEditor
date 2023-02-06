@@ -20,16 +20,22 @@ public class AlignObjectsEditorWindow : EditorWindow
 
     private int axisSelection = 0;
 
+    private float rotationAmount = 1f;
+    private bool rotateX = false;
+    private bool rotateY = true;
+    private bool rotateZ = false;
+
     private AlignType alignType = AlignType.Center;
     private Axis arrangerAxis = Axis.X;
     private bool parentCenterAlignerAccordion = true;
     private bool arrangerAccordion = false;
     private bool distributeAccordion = false;
+    private bool randomRotationAccordion = false;
 
-    [MenuItem("Iwahana Tools/オブジェクト整理ツール", false, 100)]
+    [MenuItem("Iwahana Tools/配置支援ツール", false, 100)]
     public static void ShowWindow()
     {
-        GetWindow<AlignObjectsEditorWindow>("オブジェクト整理ツール");
+        GetWindow<AlignObjectsEditorWindow>("配置支援ツール");
     }
 
     private void OnGUI()
@@ -59,7 +65,7 @@ public class AlignObjectsEditorWindow : EditorWindow
                 AlignSelectedObjects();
             }
         }
-        
+
         distributeAccordion = EditorGUILayout.Foldout(distributeAccordion, "分布");
         if (distributeAccordion)
         {
@@ -70,6 +76,20 @@ public class AlignObjectsEditorWindow : EditorWindow
             {
                 Distribute();
             }
+        }
+        
+        randomRotationAccordion = EditorGUILayout.Foldout(randomRotationAccordion, "ランダム回転");
+        if (randomRotationAccordion)
+        {
+            rotationAmount = EditorGUILayout.Slider("閾値:", rotationAmount, 1f, 360f);
+            rotateX = EditorGUILayout.Toggle("X軸", rotateX);
+            rotateY = EditorGUILayout.Toggle("Y軸", rotateY);
+            rotateZ = EditorGUILayout.Toggle("Z軸", rotateZ);
+
+            if (GUILayout.Button("回転"))
+        {
+            RotateSelectedObject();
+        }
         }
     }
 
@@ -194,6 +214,36 @@ public class AlignObjectsEditorWindow : EditorWindow
         foreach (Transform transform in selectedTransforms)
         {
             Undo.SetTransformParent(transform, parent.transform, "Set Parent");
+        }
+    }
+
+    private void RotateSelectedObject()
+    {
+        Undo.RecordObjects(Selection.transforms, "Random Rotate Objects");
+        GameObject selectedObject = Selection.activeGameObject;
+        if (selectedObject != null)
+        {
+            float xRotation = 0f;
+            float yRotation = 0f;
+            float zRotation = 0f;
+
+            if (rotateX)
+            {
+                xRotation = Mathf.Floor(Random.Range(0, 360) / rotationAmount) * rotationAmount;
+            }
+
+            if (rotateY)
+            {
+                yRotation = Mathf.Floor(Random.Range(0, 360) / rotationAmount) * rotationAmount;
+                Debug.Log("Result: " + yRotation);
+            }
+
+            if (rotateZ)
+            {
+                zRotation = Mathf.Floor(Random.Range(0, 360) / rotationAmount) * rotationAmount;
+            }
+
+            selectedObject.transform.rotation = Quaternion.Euler(xRotation, yRotation, zRotation);
         }
     }
 
