@@ -3,12 +3,13 @@ using UnityEngine;
 
 public class ScaleRandomizerEditor : EditorWindow
 {
-    private float minimum = 0.5f;
-    private float maximum = 1.5f;
+    private static float minimum = 0.5f;
+    private static float maximum = 1.5f;
     private float scaleRatio = 1f;
     private bool isDetail = false;
-    Vector3 minScale = Vector3.one;
-    Vector3 maxScale = Vector3.one;
+    Vector3 minScale = new Vector3(minimum, minimum, minimum);
+    Vector3 maxScale = new Vector3(maximum, maximum, maximum);
+    
 
     [MenuItem("Tools/Scale Randomizer")]
     public static void ShowWindow()
@@ -27,15 +28,25 @@ public class ScaleRandomizerEditor : EditorWindow
             maximum = EditorGUILayout.FloatField("Maximum", maximum);
         }
 
-        isDetail = EditorGUILayout.Toggle("Detail", isDetail); 
-        if(isDetail)
-        {
-            RandomDetailScaleSelectedObjects();
-        }
+        isDetail = EditorGUILayout.Toggle("Detail", isDetail);
 
-        if (GUILayout.Button("Randomize Scale"))
+        if(isDetail == false)
         {
-            RandomScaleSelectedObjects();
+            if (GUILayout.Button("Randomize Scale"))
+            {
+                Undo.RecordObjects(Selection.transforms, "Random Scale Objects");
+                RandomScaleSelectedObjects();
+            }
+        }
+        else
+        {            
+            minScale = EditorGUILayout.Vector3Field("Minimum Scale", minScale);
+            maxScale = EditorGUILayout.Vector3Field("Maximum Scale", maxScale);
+            if (GUILayout.Button("Randomize Scale"))
+            {
+                Undo.RecordObjects(Selection.transforms, "Random Detail Scale Objects");                   
+                RandomDetailScaleSelectedObjects();
+            }
         }
           
     }
@@ -46,16 +57,20 @@ public class ScaleRandomizerEditor : EditorWindow
         foreach (var selectedObject in Selection.objects)
         {
             var transform = (selectedObject as GameObject).transform;
-            var scale = scaleRatio * Random.Range(minimum, maximum);
+            var newscale = 1f;
+
+            if(isDetail == false)
+            {
+                newscale = newscale * Random.Range(minimum, maximum);
+            }
+
+            var scale = scaleRatio * newscale;
             transform.localScale = new Vector3(scale, scale, scale);
         }
     }
 
     private void RandomDetailScaleSelectedObjects()
     {
-        minScale = EditorGUILayout.Vector3Field("Minimum Scale", minScale);
-        maxScale = EditorGUILayout.Vector3Field("Maximum Scale", maxScale);
-
         foreach (Transform transform in Selection.transforms)
         {
             Vector3 scale = transform.localScale;
