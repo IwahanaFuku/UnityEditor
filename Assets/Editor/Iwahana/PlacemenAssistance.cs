@@ -223,13 +223,13 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
         switch (axisSelection)
         {
             case 0:
-                System.Array.Sort(originalIndices, (a, b) => positions[a].x.CompareTo(positions[b].x));
+                System.Array.Sort(positions, (a, b) => a.x.CompareTo(b.x));
                 break;
             case 1:
-                System.Array.Sort(originalIndices, (a, b) => positions[a].y.CompareTo(positions[b].y));
+                System.Array.Sort(positions, (a, b) => a.y.CompareTo(b.y));
                 break;
             case 2:
-                System.Array.Sort(originalIndices, (a, b) => positions[a].z.CompareTo(positions[b].z));
+                System.Array.Sort(positions, (a, b) => a.z.CompareTo(b.z));
                 break;
         }
 
@@ -238,7 +238,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
         float interval = (positions[positions.Length - 1][axisSelection] - positions[0][axisSelection]) / (positions.Length - 1);
         for (int i = 0; i < positions.Length; i++)
         {
-            Vector3 newPos = positions[originalIndices[i]];
+            Vector3 newPos = positions[i];
             newPos[axisSelection] = positions[0][axisSelection] + i * interval;
             Selection.gameObjects[originalIndices[i]].transform.position = newPos;
         }
