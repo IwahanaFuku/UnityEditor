@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using System.Collections.Generic;
 
 public class PlacemenAssistanceEditorWindow : EditorWindow
 {
@@ -211,39 +212,38 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
     {
         if(checkSelectedTransform(Selection.transforms)){return;}
 
-        int[] originalIndices = new int[Selection.gameObjects.Length];
-        Vector3[] positions = new Vector3[Selection.gameObjects.Length];
-
+        Dictionary<int, Vector3> originalIndices = new Dictionary<int, Vector3>();
         for (int i = 0; i < Selection.gameObjects.Length; i++)
         {
-            originalIndices[i] = i;
-            positions[i] = Selection.gameObjects[i].transform.position;
+            originalIndices[i] = Selection.gameObjects[i].transform.position;
         }
 
+        List<KeyValuePair<int, Vector3>> sortedPositions = originalIndices.ToList();
         switch (axisSelection)
         {
             case 0:
-                System.Array.Sort(positions, (a, b) => a.x.CompareTo(b.x));
+                sortedPositions.Sort((a, b) => a.Value.x.CompareTo(b.Value.x));
                 break;
             case 1:
-                System.Array.Sort(positions, (a, b) => a.y.CompareTo(b.y));
+                sortedPositions.Sort((a, b) => a.Value.y.CompareTo(b.Value.y));
                 break;
             case 2:
-                System.Array.Sort(positions, (a, b) => a.z.CompareTo(b.z));
+                sortedPositions.Sort((a, b) => a.Value.z.CompareTo(b.Value.z));
                 break;
         }
 
         Undo.RecordObjects(Selection.transforms, "Align Objects");
 
-        float interval = (positions[positions.Length - 1][axisSelection] - positions[0][axisSelection]) / (positions.Length - 1);
-        for (int i = 0; i < positions.Length; i++)
+        float interval = (sortedPositions[sortedPositions.Count - 1].Value[axisSelection] - sortedPositions[0].Value[axisSelection]) / (sortedPositions.Count - 1);
+        for (int i = 0; i < sortedPositions.Count; i++)
         {
-            Vector3 newPos = positions[i];
-            newPos[axisSelection] = positions[0][axisSelection] + i * interval;
-            Selection.gameObjects[originalIndices[i]].transform.position = newPos;
+            Vector3 newPos = sortedPositions[i].Value;
+            newPos[axisSelection] = sortedPositions[0].Value[axisSelection] + i * interval;
+            Selection.gameObjects[sortedPositions[i].Key].transform.position = newPos;
         }
         Undo.FlushUndoRecordObjects();
     }
+
 
 
     private static void ParentCenterAligner()
