@@ -32,6 +32,12 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
     private bool isDetail = false;
     Vector3 minScale = new Vector3(minimum, minimum, minimum);
     Vector3 maxScale = new Vector3(maximum, maximum, maximum);
+    private Transform referencePoint;
+    private float paddingSpace = 1f;
+    private bool padingX = true;
+    private bool padingY = true;
+    private bool padingZ = true;
+    private bool addReferencePoint = false;
 
     private AlignType alignType = AlignType.Center;
     private Axis arrangerAxis = Axis.X;
@@ -40,6 +46,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
     private bool distributeAccordion = false;
     private bool randomRotationAccordion = false;
     private bool randomScalenAccordion = false;
+    private bool paddingAccordion = false;
 
     [MenuItem("Iwahana Tools/配置支援ツール", false, 100)]
     public static void ShowWindow()
@@ -131,6 +138,26 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
             if (GUILayout.Button("回転"))
             {
                 RandomRotateSelectedObjects();
+            }
+        }
+        
+        paddingAccordion = EditorGUILayout.Foldout(paddingAccordion, "パディング");
+        if (paddingAccordion)
+        {
+            paddingSpace = EditorGUILayout.Slider("パディング間隔", paddingSpace, 0f, 10f);
+            padingX = EditorGUILayout.Toggle("X軸", padingX);
+            padingY = EditorGUILayout.Toggle("Y軸", padingY);
+            padingZ = EditorGUILayout.Toggle("Z軸", padingZ);
+
+            addReferencePoint = EditorGUILayout.Toggle("基準点を追加", addReferencePoint);
+            if (addReferencePoint)
+            {
+                referencePoint = (Transform)EditorGUILayout.ObjectField("基準点", referencePoint, typeof(Transform), true);
+            }
+
+            if (GUILayout.Button("Apply Padding"))
+            {
+                PaddingObjects();
             }
         }
     }
@@ -335,6 +362,54 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
         }
     }
 
+    private void PaddingObjects()
+    {
+        Undo.RecordObjects(Selection.transforms, "Apply Padding");
+
+        Transform[] objects = Selection.transforms;
+
+        Vector3 reference = Vector3.zero;
+        if (addReferencePoint && referencePoint != null)
+        {
+            reference = referencePoint.position;
+        }
+        else
+        {
+            for (int i = 0; i < objects.Length; i++)
+            {
+                reference += objects[i].position;
+            }
+
+            reference /= objects.Length;
+        }
+        for (int i = 0; i < objects.Length; i++)
+        {
+            Vector3 direction = objects[i].position - reference;
+            
+            float paddingX = direction.x;
+            float paddingY = direction.y;
+            float paddingZ = direction.z;
+
+            Vector3 paddingDirection = direction * paddingSpace;
+            
+            if (padingX)
+            {
+                paddingX = paddingDirection.x;
+            }
+
+            if (padingY)
+            {
+                paddingY = paddingDirection.y;
+            }
+
+            if (padingZ)
+            {
+                paddingZ = paddingDirection.z;
+            }
+            
+            objects[i].position = reference + new Vector3(paddingX, paddingY, paddingZ);
+        }
+    }
 
     private static bool checkSelectedTransform(Transform[] selectedTransforms)
     {
