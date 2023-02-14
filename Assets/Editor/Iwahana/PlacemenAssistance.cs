@@ -287,9 +287,11 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
         }
         center /= selectedTransforms.Length;
 
+        Transform parentTransform = selectedTransforms[0].transform.parent;
         GameObject group = new GameObject("Group");
         Undo.RegisterCreatedObjectUndo(group, "Create Group");
         group.transform.position = center;
+        group.transform.parent = parentTransform;
 
         foreach (Transform transform in selectedTransforms)
         {
