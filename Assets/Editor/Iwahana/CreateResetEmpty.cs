@@ -1,13 +1,27 @@
 ﻿using UnityEditor;
+using UnityEditor.Experimental.SceneManagement;
 using UnityEngine;
+
+
 
 public class CreateTransformResetObject : Editor
 {
     [MenuItem("GameObject/Create Reset Empty", false, -1)]
     private static void CreateTransformReset(MenuCommand menuCommand)
     {
-        GameObject parentObject = Selection.activeGameObject;
-        Transform parentTransform = parentObject != null ? parentObject.transform : null;
+        Transform parentTransform = null;
+
+        var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+        if (prefabStage != null)
+        {
+            parentTransform = prefabStage.prefabContentsRoot.transform;
+        }
+        
+        if (Selection.activeTransform != null)
+        {
+           GameObject parentObject = Selection.activeGameObject;
+            parentTransform = parentObject != null ? parentObject.transform : null;
+        }
 
         GameObject go = new GameObject("GameObject");
         go.transform.localPosition = Vector3.zero;
