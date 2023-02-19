@@ -37,9 +37,7 @@ public class SetStatic : EditorWindow
 
     private bool isClose = false;
 
-    /// <summary>
-    /// オブジェクトメニューで出る
-    /// </summary>
+
     [MenuItem("Iwahana Tools/スタティック設定", false, 50)]
     static void Init()
     {

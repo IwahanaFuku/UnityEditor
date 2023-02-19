@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿/* using UnityEngine;
 using UnityEditor;
 
 public class SpecialDuplicateEditorWindow : EditorWindow
@@ -51,38 +51,31 @@ public class SpecialDuplicateEditorWindow : EditorWindow
     }
 
     private void SpecialDuplicate(TransformData duplicateTransform, int copyCount)
-{
-    Transform[] selectedTransforms = Selection.transforms;
-    foreach (Transform selectedTransform in selectedTransforms)
     {
-        if(copyCount < 2){break;}
-
-        GameObject parentObject = new GameObject(selectedTransform.name + "_Duplicates");
-        Undo.RegisterCreatedObjectUndo(parentObject, "Special Duplicate");
-
-        // 複製元オブジェクトをparentObjectの子として追加
-        GameObject originalObject = Instantiate(selectedTransform.gameObject, selectedTransform.position, selectedTransform.rotation);
-        originalObject.transform.localScale = selectedTransform.localScale;
-        originalObject.name = selectedTransform.name;
-        originalObject.transform.parent = parentObject.transform;
-        Undo.RegisterCreatedObjectUndo(originalObject, "Special Duplicate");
-
-        TransformData newTransform = new TransformData(selectedTransform.position, selectedTransform.rotation, selectedTransform.localScale);
-        for(int i = 1; i < copyCount; i++)
+        Transform[] selectedTransforms = Selection.transforms;
+        foreach (Transform selectedTransform in selectedTransforms)
         {
-            newTransform.position = newTransform.position + duplicateTransform.position;
-            newTransform.rotation = newTransform.rotation * duplicateTransform.rotation;
-            newTransform.localScale = Vector3.Scale(newTransform.localScale, duplicateTransform.localScale);
+            TransformData newTransform = new TransformData(selectedTransform.position, selectedTransform.rotation, selectedTransform.localScale);
+            if(copyCount < 2){break;}
 
-            GameObject newObject = Instantiate(selectedTransform.gameObject, newTransform.position, newTransform.rotation);
-            newObject.transform.localScale = newTransform.localScale;
-            newObject.name = selectedTransform.name;
-            newObject.transform.parent = parentObject.transform;
+            GameObject parentObject = new GameObject(selectedTransform.name + "_Duplicates");
+            selectedTransform.SetParent(parentObject.transform, true);
+            Undo.RegisterCreatedObjectUndo(parentObject, "Special Duplicate");
 
-            Undo.RegisterCreatedObjectUndo(newObject, "Special Duplicate");
+            for(int i = 1; i < copyCount; i++)
+            {
+                newTransform.position = newTransform.position + duplicateTransform.position;
+                newTransform.rotation = newTransform.rotation * duplicateTransform.rotation;
+                newTransform.localScale = Vector3.Scale(newTransform.localScale, duplicateTransform.localScale);
+
+                GameObject newObject = Instantiate(selectedTransform.gameObject, newTransform.position, newTransform.rotation);
+                newObject.transform.localScale = newTransform.localScale;
+                newObject.name = selectedTransform.name;
+                newObject.transform.parent = parentObject.transform;
+
+                Undo.RegisterCreatedObjectUndo(newObject, "Special Duplicate");
+            }
         }
     }
-}
 
-
-}
+} */

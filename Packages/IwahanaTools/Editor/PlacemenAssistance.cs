@@ -61,7 +61,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
         {
             if (GUILayout.Button("生成"))
             {
-                ParentCenterAligner();
+                ParentCenterAligner(Selection.transforms);
             }
         }
 
@@ -168,7 +168,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
     /// </summary>
     [MenuItem ("Iwahana Tools/カスタム ショートカット/グループを生成 %g")]
     private static void Log2 () {
-        ParentCenterAligner();
+        ParentCenterAligner(Selection.transforms);
     }
 
     private void AlignSelectedObjects()
@@ -273,10 +273,9 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
 
 
 
-    private static void ParentCenterAligner()
+    private static void ParentCenterAligner(Transform[] selectedTransforms)
     {
         Undo.RecordObjects(Selection.transforms, "Align Group Objects");
-        Transform[] selectedTransforms = Selection.transforms;
 
         Vector3 center = Vector3.zero;
         foreach (Transform transform in selectedTransforms)
