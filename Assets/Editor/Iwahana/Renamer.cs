@@ -2,10 +2,12 @@
 using UnityEngine;
 using UnityEditor;
 using System.Text.RegularExpressions;
+using System.IO;
 
 public class Renamer : EditorWindow
 {
     private bool renameToMaterialNameAccordion = true;
+    private bool renameToTextureNameAccordion = true;
     private bool addObjectNumberAccordion = true;
     private bool removeObjectNumberAccordion = true;
 
@@ -17,7 +19,16 @@ public class Renamer : EditorWindow
 
     void OnGUI()
     {
-        renameToMaterialNameAccordion = EditorGUILayout.Foldout(renameToMaterialNameAccordion, "マテリアルの名前でリネーム");
+        renameToTextureNameAccordion = EditorGUILayout.Foldout(renameToTextureNameAccordion, "マテリアルをテクスチャの名前でリネーム");
+        if (renameToTextureNameAccordion)
+        {
+            if (GUILayout.Button("実行"))
+            {
+                RenameToTextureName();
+            }
+        }
+
+        renameToMaterialNameAccordion = EditorGUILayout.Foldout(renameToMaterialNameAccordion, "オブジェクトをマテリアルの名前でリネーム");
         if (renameToMaterialNameAccordion)
         {
             if (GUILayout.Button("実行"))
@@ -41,6 +52,31 @@ public class Renamer : EditorWindow
             if (GUILayout.Button("実行"))
             {
                 RemoveObjectNumber();
+            }
+        }
+    }
+
+
+    private void RenameToTextureName()
+    {
+        Undo.RecordObjects(Selection.gameObjects, "Change Texture Name");
+        Object[] selectedObjects = Selection.objects;
+
+        foreach (Object selectedObject in selectedObjects)
+        {
+            Material selectedMaterial = selectedObject as Material;
+            Texture albedoTexture = selectedMaterial.GetTexture("_MainTex");
+
+            if (selectedMaterial != null)
+            {
+                string selectedMaterialName = AssetDatabase.GetAssetPath(selectedMaterial);
+                string textureName = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(albedoTexture));
+                if(selectedMaterial.name != "")
+                {
+                    Debug.Log(textureName);
+                    AssetDatabase.RenameAsset(selectedMaterialName, textureName);
+                    AssetDatabase.SaveAssets();             
+                }
             }
         }
     }
