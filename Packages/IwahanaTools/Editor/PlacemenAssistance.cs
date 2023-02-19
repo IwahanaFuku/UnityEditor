@@ -48,7 +48,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
     private bool randomScalenAccordion = false;
     private bool paddingAccordion = false;
 
-    [MenuItem("Iwahana Tools/配置支援ツール", false, 100)]
+    [MenuItem("Iwahana Tools/配置支援ツール", false, 10)]
     public static void ShowWindow()
     {
         GetWindow<PlacemenAssistanceEditorWindow>("配置支援ツール");
@@ -155,7 +155,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
                 referencePoint = (Transform)EditorGUILayout.ObjectField("基準点", referencePoint, typeof(Transform), true);
             }
 
-            if (GUILayout.Button("Apply Padding"))
+            if (GUILayout.Button("パディング"))
             {
                 PaddingObjects();
             }
@@ -275,8 +275,6 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
 
     private static void ParentCenterAligner()
     {
-        if(checkSelectedTransform(Selection.transforms)){return;}
-
         Undo.RecordObjects(Selection.transforms, "Align Group Objects");
         Transform[] selectedTransforms = Selection.transforms;
 

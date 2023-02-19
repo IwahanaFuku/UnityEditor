@@ -40,7 +40,7 @@ public class SetStatic : EditorWindow
     /// <summary>
     /// オブジェクトメニューで出る
     /// </summary>
-    [MenuItem("GameObject/Set Static", false, 20)]
+    [MenuItem("Iwahana Tools/スタティック設定", false, 50)]
     static void Init()
     {
         SetStatic window = EditorWindow.GetWindow<SetStatic>();

@@ -40,7 +40,7 @@ public class CopyTransformByList : EditorWindow
     /// <summary>
     /// 上部メニューで出る
     /// </summary>
-    [MenuItem("GameObject/Copy Transform By List", false, 20)]
+    [MenuItem("Iwahana Tools/ツリートランスフォームのコピー", false, 50)]
     static void Init()
     {
         CopyTransformByList window = EditorWindow.GetWindow<CopyTransformByList>();
