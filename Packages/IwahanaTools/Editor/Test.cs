@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using System;
+using System.Collections.Generic;
 
 public class SpecialDuplicateEditorWindow : EditorWindow
 {
@@ -51,38 +53,57 @@ public class SpecialDuplicateEditorWindow : EditorWindow
     }
 
     private void SpecialDuplicate(TransformData duplicateTransform, int copyCount)
-{
-    Transform[] selectedTransforms = Selection.transforms;
-    foreach (Transform selectedTransform in selectedTransforms)
     {
-        if(copyCount < 2){break;}
-
-        GameObject parentObject = new GameObject(selectedTransform.name + "_Duplicates");
-        Undo.RegisterCreatedObjectUndo(parentObject, "Special Duplicate");
-
-        // 複製元オブジェクトをparentObjectの子として追加
-        GameObject originalObject = Instantiate(selectedTransform.gameObject, selectedTransform.position, selectedTransform.rotation);
-        originalObject.transform.localScale = selectedTransform.localScale;
-        originalObject.name = selectedTransform.name;
-        originalObject.transform.parent = parentObject.transform;
-        Undo.RegisterCreatedObjectUndo(originalObject, "Special Duplicate");
-
-        TransformData newTransform = new TransformData(selectedTransform.position, selectedTransform.rotation, selectedTransform.localScale);
-        for(int i = 1; i < copyCount; i++)
+        Transform[] selectedTransforms = Selection.transforms;
+        foreach (Transform selectedTransform in selectedTransforms)
         {
-            newTransform.position = newTransform.position + duplicateTransform.position;
-            newTransform.rotation = newTransform.rotation * duplicateTransform.rotation;
-            newTransform.localScale = Vector3.Scale(newTransform.localScale, duplicateTransform.localScale);
+            TransformData newTransform = new TransformData(selectedTransform.position, selectedTransform.rotation, selectedTransform.localScale);
+            var copyTransforms= new List<Transform>();
+            copyTransforms.Add(selectedTransform);
+            
+            if(copyCount < 2){break;}
 
-            GameObject newObject = Instantiate(selectedTransform.gameObject, newTransform.position, newTransform.rotation);
-            newObject.transform.localScale = newTransform.localScale;
-            newObject.name = selectedTransform.name;
-            newObject.transform.parent = parentObject.transform;
+            for(int i = 1; i < copyCount; i++)
+            {
+                newTransform.position = newTransform.position + duplicateTransform.position;
+                newTransform.rotation = newTransform.rotation * duplicateTransform.rotation;
+                newTransform.localScale = Vector3.Scale(newTransform.localScale, duplicateTransform.localScale);
 
-            Undo.RegisterCreatedObjectUndo(newObject, "Special Duplicate");
+                GameObject newObject = Instantiate(selectedTransform.gameObject, newTransform.position, newTransform.rotation);
+                newObject.transform.localScale = newTransform.localScale;
+                newObject.name = selectedTransform.name;
+
+                Undo.RegisterCreatedObjectUndo(newObject, "Create Copy");
+
+                copyTransforms.Add(newObject.transform);
+            }
+
+            ParentCenterAligner(copyTransforms.ToArray());
         }
     }
-}
 
+    private static void ParentCenterAligner(Transform[] selectedTransforms)
+    {
+        Undo.RecordObjects(selectedTransforms, "Align Group Objects");
 
+        Vector3 center = Vector3.zero;
+        foreach (Transform transform in selectedTransforms)
+        {
+            center += transform.position;
+        }
+        center /= selectedTransforms.Length;
+
+        Transform parentTransform = selectedTransforms[0].transform.parent;
+        GameObject group = new GameObject("Group");
+        Undo.RegisterCreatedObjectUndo(group, "Create Group");
+        group.transform.position = center;
+        group.transform.parent = parentTransform;
+
+        foreach (Transform transform in selectedTransforms)
+        {
+            Undo.SetTransformParent(transform, group.transform, "Set Group");
+        }
+
+        Selection.activeGameObject = group;
+    }
 }
