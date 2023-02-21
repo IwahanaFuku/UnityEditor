@@ -99,10 +99,10 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
                                           ));
             duplicateTransform.localScale = EditorGUILayout.Vector3Field("Scale", duplicateTransform.localScale);
             copyCount = EditorGUILayout.IntSlider("コピー数", copyCount, 0, maxCopyCount);
-                if (GUILayout.Button("複製"))
-                {
-                    SpecialDuplicate(duplicateTransform, copyCount);
-                }
+            if (GUILayout.Button("複製"))
+            {
+                SpecialDuplicate(duplicateTransform, copyCount);
+            }
         }
 
         arrangerAccordion = EditorGUILayout.Foldout(arrangerAccordion, "整列");
