@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using static System.Convert;
 using System.Collections.Generic;
 
 public class PlacemenAssistanceEditorWindow : EditorWindow
@@ -28,6 +29,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
 
     private static float minimum = 0.5f;
     private static float maximum = 1.5f;
+    private float rotationalFrequency = 360;
     private float scaleRatio = 1f;
     private bool isDetail = false;
     Vector3 minScale = new Vector3(minimum, minimum, minimum);
@@ -55,10 +57,9 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
             this.localScale = localScale;
         }
     }
-
-
     private AlignType alignType = AlignType.Center;
     private Axis arrangerAxis = Axis.X;
+
     private bool parentCenterAlignerAccordion = false;
     private bool arrangerAccordion = false;
     private bool distributeAccordion = false;
@@ -66,8 +67,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
     private bool randomScalenAccordion = false;
     private bool paddingAccordion = false;
     private bool specialDuplicateAccordion = false;
-
-
+    private bool rotationalFrequencyeAccordion = false;
 
     [MenuItem("Iwahana Tools/配置支援ツール", false, 10)]
     public static void ShowWindow()
@@ -76,16 +76,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
     }
 
     private void OnGUI()
-    {    
-        parentCenterAlignerAccordion = EditorGUILayout.Foldout(parentCenterAlignerAccordion, "親を生成");
-        if (parentCenterAlignerAccordion)
-        {
-            if (GUILayout.Button("生成"))
-            {
-                ParentCenterAligner(Selection.transforms);
-            }
-        }
-
+    {
         specialDuplicateAccordion = EditorGUILayout.Foldout(specialDuplicateAccordion, "特殊な複製");
         if (specialDuplicateAccordion)
         {
@@ -102,6 +93,17 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
             if (GUILayout.Button("複製"))
             {
                 SpecialDuplicate(duplicateTransform, copyCount);
+            }
+        }
+
+        rotationalFrequencyeAccordion = EditorGUILayout.Foldout(rotationalFrequencyeAccordion, "回転複製");
+        if (rotationalFrequencyeAccordion)
+        {
+            rotationalFrequency = EditorGUILayout.Slider("度数制限:", rotationalFrequency, 1, 360);
+
+            if (GUILayout.Button("回転複製"))
+            {
+                RotateDuplicate();
             }
         }
 
@@ -170,7 +172,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
         randomRotationAccordion = EditorGUILayout.Foldout(randomRotationAccordion, "ランダム回転");
         if (randomRotationAccordion)
         {
-            rotationAmount = EditorGUILayout.Slider("閾値:", rotationAmount, 1f, 360f);
+            rotationAmount = EditorGUILayout.Slider("閾値:", rotationAmount, 1, 360);
             rotateX = EditorGUILayout.Toggle("X軸", rotateX);
             rotateY = EditorGUILayout.Toggle("Y軸", rotateY);
             rotateZ = EditorGUILayout.Toggle("Z軸", rotateZ);
@@ -202,10 +204,7 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
         }
     }
 
-    //================================================================================
-    /// <summary>
-    /// 選択オブジェクトのTransformを四捨五入する
-    /// </summary>
+
     [MenuItem ("Iwahana Tools/カスタム ショートカット/グループを生成 %g")]
     private static void Log2 () {
         ParentCenterAligner(Selection.transforms);
@@ -273,6 +272,85 @@ public class PlacemenAssistanceEditorWindow : EditorWindow
         }
 
         Undo.FlushUndoRecordObjects();
+    }
+
+
+    private void RotateDuplicate()
+    {
+        GameObject selectedObject;
+        List<GameObject> boundsObjectsList;
+        selectedObject = Selection.activeObject as GameObject;
+        boundsObjectsList = new List<GameObject>();
+
+        if(selectedObject.transform.childCount == 0)
+        {
+            boundsObjectsList.Add(selectedObject);
+        }
+        else
+        {
+            foreach (Transform childTransform in selectedObject.transform)
+            {
+                boundsObjectsList.Add(childTransform.gameObject);
+            }
+        }
+
+        GameObject[] boundsObjects = boundsObjectsList.ToArray();
+        Bounds bounds = new Bounds();
+        bool hasBounds = false;
+
+        foreach (GameObject boundsObject in boundsObjects)
+        {
+            Renderer renderer = boundsObject.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+        }
+
+        Vector3 absCenter = new Vector3(Mathf.Abs(bounds.center.x), Mathf.Abs(bounds.center.y), Mathf.Abs(bounds.center.z)) - selectedObject.transform.position;
+        Vector3 edgeCenterX = new Vector3(absCenter.x + bounds.size.x / 2, absCenter.y, absCenter.z);
+        Vector3 edgeCenterZ = new Vector3(absCenter.x, absCenter.y, absCenter.z + bounds.size.z / 2);
+
+        float theta;
+        Vector3 rotationAxis = Vector3.up;
+        int numOfCopy;
+
+        if(edgeCenterZ.sqrMagnitude < edgeCenterX.sqrMagnitude)
+        {
+            theta = Mathf.Atan2(bounds.size.z / 2, edgeCenterX.x) * Mathf.Rad2Deg * 2;
+            numOfCopy = ToInt32(rotationalFrequency / theta);
+            Debug.Log("Z");
+        }
+        else
+        {
+            theta = Mathf.Atan2(bounds.size.x / 2, edgeCenterZ.z) * Mathf.Rad2Deg * 2;
+            numOfCopy = ToInt32(rotationalFrequency / theta);
+            Debug.Log("X");
+        }
+
+        Undo.RecordObjects(boundsObjects, "Create Cube");
+
+        var copyTransforms= new List<Transform>();
+        copyTransforms.Add(selectedObject.transform);
+
+        for(int i = 0; i < numOfCopy + 1; i++)
+        {
+            Quaternion rotationQuaternion = Quaternion.AngleAxis(theta * i, rotationAxis);
+            GameObject newObject = Instantiate(selectedObject, selectedObject.transform.position, selectedObject.transform.rotation * rotationQuaternion);
+            newObject.name = selectedObject.name;
+            copyTransforms.Add(newObject.transform);
+
+            Undo.RegisterCreatedObjectUndo(newObject, "Create Cube");
+        }
+        ParentCenterAligner(copyTransforms.ToArray());
     }
     
     private void DistributeObjects()
